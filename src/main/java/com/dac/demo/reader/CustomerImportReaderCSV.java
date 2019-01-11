@@ -15,6 +15,7 @@ import org.springframework.validation.BindException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.Date;
 
 
@@ -48,10 +49,11 @@ public class CustomerImportReaderCSV implements FieldSetMapper<Customer> {
     @Override
     public Customer mapFieldSet(FieldSet fieldSet) throws BindException {
         log.info("FieldSet:{} ", fieldSet);
-        Customer customer = null;
+        Customer customer;
         if (fieldSet == null){
             return null;
         }
+
         if(!isNameValid(fieldSet.readString("name"))){
             return new Customer();
         }
@@ -63,22 +65,6 @@ public class CustomerImportReaderCSV implements FieldSetMapper<Customer> {
         customer.setDob(convertToDate(fieldSet.readString("dob").trim()));
         return customer;
     }
-
-//    private Customer mapField(FieldSet fieldSet) {
-//        log.info("FieldSet:{} ", fieldSet);
-//        Customer customer;
-//        if (fieldSet == null){
-//            return null;
-//        }
-//        if(isNameValid(fieldSet.readString("name"))){
-//            fieldSet = null;
-//        }
-//        customer = new Customer();
-//        customer.setName(fieldSet.readString("name"));
-//        customer.setDob(convertToDate(fieldSet.readString("dob").trim()));
-//        return customer;
-//    }
-
 
     private String[] getFieldsName() {
         return new String[]{"name", "dob"};
@@ -104,6 +90,14 @@ public class CustomerImportReaderCSV implements FieldSetMapper<Customer> {
         dateFormat.setLenient(false);
         try{
             Date date = dateFormat.parse(input);
+            Calendar calendar = Calendar.getInstance();
+            int currentYear = calendar.get(Calendar.YEAR);
+            calendar.setTime(date);
+            int inputYear = calendar.get(Calendar.YEAR);
+            if(inputYear >= currentYear){
+                log.error("Year must not great than " + currentYear);
+                return  false;
+            }
         }
         catch (ParseException e){
             log.error("Invalid date format");

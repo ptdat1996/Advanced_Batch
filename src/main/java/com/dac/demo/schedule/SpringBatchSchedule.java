@@ -9,6 +9,7 @@ import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteExcep
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -31,32 +32,37 @@ public class SpringBatchSchedule {
     @Qualifier("exportCustomer")
     private Job secondScheduleJob;
 
+    @Value("${spring.schedule.delay}")
+    private int delayTime;
+
     @Scheduled(fixedDelayString = "${spring.schedule.delay}")
     public void launchJob() {
         log.info("Start schedule");
         try {
             JobExecution execution = jobLauncher.run(firstScheduleJob, new JobParametersBuilder()
-                    .addString("message", "Import job start")
-                    .addDate("date", new Date())
-                    .toJobParameters());
+                                                                            .addString("message", "Import job start")
+                                                                            .addDate("date", new Date())
+                                                                            .toJobParameters());
             if (execution.getStatus() == BatchStatus.COMPLETED) {
-                log.info("!!! JOB Import Customer FINISHED! Time to verify the results");
                 if (execution.getJobInstance().getJobName().equals("importCustomer")) {
+                    log.info("!!! JOB Import Customer FINISHED! Time to verify the results");
                     execution.stop();
+                    Thread.sleep(delayTime);
                     execution = jobLauncher.run(secondScheduleJob, new JobParametersBuilder()
-                            .addString("message", "Export job start")
-                            .addDate("date", new Date())
-                            .toJobParameters());
+                                                                            .addString("message", "Export job start")
+                                                                            .addDate("date", new Date())
+                                                                            .toJobParameters());
                 }
                 if (execution.getJobInstance().getJobName().equals("exportCustomer")) {
+                    log.info("!!! JOB Export Customer FINISHED! Time to verify the results");
                     execution.stop();
                     execution = jobLauncher.run(firstScheduleJob, new JobParametersBuilder()
-                            .addString("message", "Import job start")
-                            .addDate("date", new Date())
-                            .toJobParameters());
+                                                                            .addString("message", "Import job start")
+                                                                            .addDate("date", new Date())
+                                                                            .toJobParameters());
                 }
             }
-        } catch (JobParametersInvalidException | JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException e) {
+        } catch (JobParametersInvalidException | JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException |InterruptedException e) {
             log.error(e.getMessage());
         }
         log.info("End schedule");

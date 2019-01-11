@@ -24,7 +24,8 @@ public class CustomerExportWriter {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-        writer.setAppendAllowed(true);
+        //writer.setAppendAllowed(true);
+        writer.setShouldDeleteIfExists(true);
         DelimitedLineAggregator<CustomerResult> aggregator = new DelimitedLineAggregator<>();
         aggregator.setDelimiter(DelimitedLineTokenizer.DELIMITER_COMMA);
         BeanWrapperFieldExtractor<CustomerResult> fieldExtractor = new BeanWrapperFieldExtractor<>();
